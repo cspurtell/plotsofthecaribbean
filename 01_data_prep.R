@@ -24,7 +24,8 @@ weather_clean <- weather %>%
   transmute(
     day,
     mean_temp = mean_temp,
-    precip    = precipitation
+    precip    = precipitation,
+    dew_point = dew_point
   )
 
 pw_merged <- pirates_clean %>%
@@ -36,4 +37,10 @@ pw_merged <- pirates_clean %>%
     ),
     month = factor(month, levels = month.name),
     season = fct_drop(season)
+  )
+
+pw_merged <- pw_merged %>% 
+  mutate(
+    weekday = wday(day, label = TRUE, week_start = 1),
+    is_weekend = weekday %in% c("Sat", "Sun")
   )
