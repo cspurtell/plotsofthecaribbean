@@ -1,6 +1,7 @@
 library(tidyverse)
 library(broom)
 library(lubridate)
+library(car)
 
 # Creating merged dataset
 source("01_data_prep.R")
@@ -15,3 +16,9 @@ summary(m_weather)
 # Adding weather variables improves the model!
 
 anova(m_base, m_weather)
+
+vif(m_weather)
+
+pw_merged %>%
+  select(mean_temp, dew_point, precip) %>%
+  cor(use = "complete.obs")
