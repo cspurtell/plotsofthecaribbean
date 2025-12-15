@@ -1,6 +1,10 @@
 library(tidyverse)
 library(lubridate)
 library(gt)
+library(modelsummary)
+library(broom)
+library(dplyr)
+library(knitr)
 
 # Importing datasets and models
 source("01_data_prep.R")
@@ -11,16 +15,28 @@ if (!dir.exists("figures")) dir.create("figures")
 
 ## Note: Not all of these figs are used in the report, but I included them for experimentation sake ##
 
-# Fig 1: Time Series of Daily Wait Times
-fig1_time_series <- ggplot(pw_merged, aes(x = day, y = wait)) +
-  geom_line(alpha = 0.6) +
+# Fig A2: Time Series of Daily Wait Times (in appendix)
+pw_ts2 <- pw_merged %>%
+  select(day, wait) %>%
+  arrange(day) %>%
+  complete(day = seq(min(day), max(day), by = "day"))
+
+fig1_time_series <- ggplot(pw_ts2, aes(x = day, y = wait)) +
+  geom_line(na.rm = TRUE, alpha = 0.6) +
   labs(
     x = "Date",
-    y = "Daily average wait time (minutes)"
+    y = "Daily average wait time (min)"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 40, hjust = 1, size = 9),
+    axis.title.x = element_text(margin = margin(t = 20)),
+    axis.title.y = element_text(margin = margin(r = 20)),
+    plot.margin = margin(10, 10, 25, 10)
   )
+fig1_time_series
 
 ggsave(
-  filename = "figures/fig1_time_series.png",
+  filename = "figures/figA2_time_series.png",
   plot = fig1_time_series,
   width = 8,
   height = 4.5,
@@ -48,7 +64,7 @@ fig2_season_ci
 
 ggsave("figures/fig2_season_ci.png", fig2_season_ci, width = 8, height = 4.5, dpi = 300)
 
-# Fig 2.1: Improved version of above
+# Fig 2.1: Improved version of above (used in report)
 fig2_boxplot<- ggplot(pw_merged, aes(x = season, y = wait)) +
   geom_boxplot(
     outlier.alpha = 0.0,
@@ -92,7 +108,7 @@ fig2_boxplot<- ggplot(pw_merged, aes(x = season, y = wait)) +
 
 fig2_boxplot
 
-ggsave("figures/fig2_boxplot.png", fig2_boxplot, width = 8, height = 4.5, dpi = 300)
+ggsave("figures/fig1_boxplot.png", fig2_boxplot, width = 8, height = 4.5, dpi = 300)
 
 # Fig 3: Residuals vs. Fitted
 png("figures/fig3_residuals_vs_fitted.png", width = 800, height = 600)
@@ -119,6 +135,7 @@ fig5_temp <- ggplot(pw_merged, aes(x = mean_temp, y = wait)) +
     x = "Mean daily temperature",
     y = "Daily average wait time"
   )
+fig5_temp
 
 ggsave("figures/fig5_temp_vs_wait.png", fig5_temp, width = 6.5, height = 5, dpi = 300)
 
@@ -183,3 +200,49 @@ table_fig <- sample_tbl %>%
   )
 
 gtsave(table_fig, "figures/figA1_sample_data_table.png")
+
+# Fig 9: Model Summary
+summary(m_weather)
+
+# Fig 10: ANOVA Table
+model_comp <- tibble(
+  Model = c("Baseline", "Weather"),
+  Predictors = c(
+    "Season + Year + Weekend",
+    "+ Temperature + Precipitation + Dew Point"
+  ),
+  `Adj. R²` = c(
+    round(summary(m_base)$adj.r.squared, 3),
+    round(summary(m_weather)$adj.r.squared, 3)
+  ),
+  `Residual SE` = c(
+    round(summary(m_base)$sigma, 2),
+    round(summary(m_weather)$sigma, 2)
+  )
+)
+
+anova_res <- anova(m_base, m_weather)
+
+anova_note <- paste0(
+  "Nested ANOVA: F = ",
+  round(anova_res$F[2], 2),
+  ", p = ",
+  format.pval(anova_res$`Pr(>F)`[2], digits = 3)
+)
+
+fig2_table <- model_comp %>%
+  gt() %>%
+  tab_header(
+    title = "Model comparison for daily wait times",
+    subtitle = anova_note
+  ) %>%
+  cols_align(
+    align = "center",
+    everything()
+  ) %>%
+  opt_table_outline() %>%
+  tab_source_note(
+    source_note = "Baseline model includes calendar variables only; weather model adds daily weather conditions."
+  )
+
+gtsave(fig2_table, "figures/figure_2_model_comparison.png")
