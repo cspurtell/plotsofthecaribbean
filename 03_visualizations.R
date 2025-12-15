@@ -1,5 +1,6 @@
 library(tidyverse)
 library(lubridate)
+library(gt)
 
 # Importing datasets and models
 source("01_data_prep.R")
@@ -43,16 +44,36 @@ fig2_season_ci <- pw_merged %>%
     y = "Mean daily wait time (minutes)"
   ) +
   theme(axis.text.x = element_text(angle = 35, hjust = 1))
+fig2_season_ci
 
 ggsave("figures/fig2_season_ci.png", fig2_season_ci, width = 8, height = 4.5, dpi = 300)
 
 # Fig 2.1: Improved version of above
 fig2_boxplot<- ggplot(pw_merged, aes(x = season, y = wait)) +
   geom_boxplot(
-    outlier.alpha = 0.2,
+    outlier.alpha = 0.0,
     fill = "grey85",
     color = "grey30"
   ) +
+  scale_x_discrete(labels = c(
+    "Winter" = "Winter",
+    "Martin Luther King Junior Day" = "MLK Jr Day",
+    "President's Day Week" = "Presidents’ Day",
+    "Mardi Gras" = "Mardi Gras",
+    "Spring" = "Spring",
+    "Easter" = "Easter",
+    "Memorial Day" = "Memorial Day",
+    "Summer Break" = "Summer",
+    "4th of July" = "4th of July",
+    "September Low" = "September Low",
+    "Fall" = "Fall",
+    "Columbus Day" = "Columbus Day",
+    "Halloween" = "Halloween",
+    "Jersey Week" = "Jersey Week",
+    "Thanksgiving" = "Thanksgiving",
+    "Christmas" = "Christmas",
+    "Christmas Peak" = "Christmas Peak"
+  )) +
   theme_minimal(base_size = 12) +
   theme(
     axis.text.x = element_text(angle = 30, hjust = 1),
@@ -60,8 +81,16 @@ fig2_boxplot<- ggplot(pw_merged, aes(x = season, y = wait)) +
   ) +
   labs(
     x = "Seasonal period",
-    y = "Daily average wait time (minutes)"
+    y = "Daily average wait time (min)"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 40, hjust = 1, size = 9),
+    axis.title.x = element_text(margin = margin(t = 20)),
+    axis.title.y = element_text(margin = margin(r = 20)),
+    plot.margin = margin(10, 10, 25, 10)
   )
+
+fig2_boxplot
 
 ggsave("figures/fig2_boxplot.png", fig2_boxplot, width = 8, height = 4.5, dpi = 300)
 
@@ -77,6 +106,7 @@ fig4_obs_pred_season <- pw_merged %>%
   geom_point(alpha = 0.3) +
   facet_wrap(~ season) +
   geom_abline(intercept = 0, slope = 1)
+fig4_obs_pred_season
 
 ggsave("figures/fig4_obs_pred_by_season.png",
        fig4_obs_pred_season, width = 9, height = 6, dpi = 300)
@@ -121,3 +151,35 @@ fig7_heatmap <- pw_merged %>%
 
 ggsave("figures/fig7_month_weekday_heatmap.png",
        fig7_heatmap, width = 6.5, height = 5.5, dpi = 300)
+
+# Fig 8: Sample of dataset
+set.seed(123)
+
+sample_tbl <- pw_merged %>%
+  select(
+    day,
+    wait,
+    season,
+    is_weekend,
+    mean_temp,
+    precip,
+    dew_point
+  ) %>%
+  group_by(season) %>%
+  slice_sample(n = 1) %>%
+  ungroup() %>%
+  arrange(day)
+sample_tbl <- sample_tbl %>% slice(1:8)
+
+table_fig <- sample_tbl %>%
+  gt() %>%
+  tab_header(
+    title = "Sample of merged dataset",
+    subtitle = "Daily wait times, calendar variables, and weather conditions"
+  ) %>%
+  fmt_number(
+    columns = c(wait, mean_temp, precip, dew_point),
+    decimals = 1
+  )
+
+gtsave(table_fig, "figures/figA1_sample_data_table.png")

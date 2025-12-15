@@ -44,3 +44,28 @@ pw_merged <- pw_merged %>%
     weekday = wday(day, label = TRUE, week_start = 1),
     is_weekend = weekday %in% c("Sat", "Sun")
   )
+
+season_order <- c(
+  "Winter",
+  "Martin Luther King Junior Day",
+  "President's Day Week",
+  "Mardi Gras",
+  "Spring",
+  "Easter",
+  "Memorial Day",
+  "Summer Break",
+  "4th of July",
+  "September Low",
+  "Fall",
+  "Columbus Day",
+  "Halloween",
+  "Jersey Week",
+  "Thanksgiving",
+  "Christmas",
+  "Christmas Peak"
+)
+
+pw_merged <- pw_merged %>%
+  mutate(
+    season = factor(season, levels = season_order)
+  )
