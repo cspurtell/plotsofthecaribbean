@@ -134,6 +134,11 @@ fig5_temp <- ggplot(pw_merged, aes(x = mean_temp, y = wait)) +
   labs(
     x = "Mean daily temperature",
     y = "Daily average wait time"
+  ) +
+  theme(
+    axis.title.x = element_text(margin = margin(t = 20)),
+    axis.title.y = element_text(margin = margin(r = 20)),
+    plot.margin = margin(10, 10, 25, 10)
   )
 fig5_temp
 
@@ -146,7 +151,7 @@ fig6_weekend <- ggplot(pw_merged, aes(x = is_weekend, y = wait)) +
     x = "Weekend",
     y = "Daily average wait time (minutes)"
   )
-
+  
 ggsave("figures/fig6_weekend.png", fig6_weekend, width = 5, height = 4, dpi = 300)
 
 # Fig 7: Heatmap of average wait by month x weekday
